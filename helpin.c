@@ -1,5 +1,11 @@
 #include "shell.h"
 
+char *get_args(char *line, int *exe_ret);
+int call_args(char **args, char **front, int *exe_ret);
+int run_args(char **args, char **front, int *exe_ret);
+int handle_args(int *exe_ret);
+int check_args(char **args);
+
 /**
  * get_args - Gets a command from standard input.
  * @line: A buffer to store the command.
@@ -8,28 +14,29 @@
  * Return: If an error occurs - NULL.
  *         Otherwise - a pointer to the stored command.
  */
-char *find_args(char *line, int *exit_status)
+char *get_args(char *line, int *exe_ret)
 {
-	size_t buffer = 0;
-	ssize_t get;
+	size_t n = 0;
+	ssize_t read;
+	char *prompt = "$ ";
 
 	if (line)
 		free(line);
 
-	get = _getline(&line, &buffer, STDIN_FILENO);
-	if (get == -1)
+	read = _getline(&line, &n, STDIN_FILENO);
+	if (read == -1)
 		return (NULL);
-	if (get == 1)
+	if (read == 1)
 	{
 		hist++;
 		if (isatty(STDIN_FILENO))
-			write(STDOUT_FILENO, "$ ", 2);
-		return (find_args(line, exit_status));
+			write(STDOUT_FILENO, prompt, 2);
+		return (get_args(line, exe_ret));
 	}
 
-	line[get - 1] = '\0';
-	replace_variable(&line, exit_status);
-	process_line(&line, get);
+	line[read - 1] = '\0';
+	variable_replacement(&line, exe_ret);
+	handle_line(&line, read);
 
 	return (line);
 }
@@ -37,63 +44,60 @@ char *find_args(char *line, int *exit_status)
 /**
  * call_args - Partitions operators from commands and calls them.
  * @args: An array of arguments.
- * @cmd_front: A double pointer to the beginning of args.
- * @exit_status: The return value of the parent process' last executed command.
+ * @front: A double pointer to the beginning of args.
+ * @exe_ret: The return value of the parent process' last executed command.
+ *
  * Return: The return value of the last executed command.
  */
-int prepare_args(char **args, char **cmd_front, int *exit_status)
+int call_args(char **args, char **front, int *exe_ret)
 {
-	int result, idx = 0;
+	int ret, index;
 
 	if (!args[0])
-		return (*exit_status);
-
-	while (args[idx])
+		return (*exe_ret);
+	for (index = 0; args[index]; index++)
 	{
-		if (_strncmp(args[idx], "||", 2) == 0)
+		if (_strncmp(args[index], "||", 2) == 0)
 		{
-			free(args[idx]);
-			args[idx] = NULL;
+			free(args[index]);
+			args[index] = NULL;
 			args = replace_aliases(args);
-			result = execute_args(args, cmd_front, exit_status);
-			if (*exit_status != 0)
+			ret = run_args(args, front, exe_ret);
+			if (*exe_ret != 0)
 			{
-				args = &args[++idx];
-				idx = 0;
+				args = &args[++index];
+				index = 0;
 			}
 			else
 			{
-				while (args[idx])
-					free(args[idx++]);
-				return (result);
+				for (index++; args[index]; index++)
+					free(args[index]);
+				return (ret);
 			}
 		}
-		else if (_strncmp(args[idx], "&&", 2) == 0)
+		else if (_strncmp(args[index], "&&", 2) == 0)
 		{
-			free(args[idx]);
-			args[idx] = NULL;
+			free(args[index]);
+			args[index] = NULL;
 			args = replace_aliases(args);
-			result = execute_args(args, cmd_front, exit_status);
-			if (*exit_status == 0)
+			ret = run_args(args, front, exe_ret);
+			if (*exe_ret == 0)
 			{
-				args = &args[++idx];
-				idx = 0;
+				args = &args[++index];
+				index = 0;
 			}
 			else
 			{
-				while (args[idx])
-					free(args[idx++]);
-				return (result);
+				for (index++; args[index]; index++)
+					free(args[index]);
+				return (ret);
 			}
 		}
-		idx++;
 	}
-
 	args = replace_aliases(args);
-	result = execute_args(args, cmd_front, exit_status);
-	return (result);
+	ret = run_args(args, front, exe_ret);
+	return (ret);
 }
-
 
 /**
  * run_args - Calls the execution of a command.
@@ -103,116 +107,103 @@ int prepare_args(char **args, char **cmd_front, int *exit_status)
  *
  * Return: The return value of the last executed command.
  */
-int execute_args(char **args, char **front, int *exit_status)
+int run_args(char **args, char **front, int *exe_ret)
 {
-	int result, i = 0;
+	int ret, i;
 	int (*builtin)(char **args, char **front);
 
 	builtin = get_builtin(args[0]);
 
 	if (builtin)
 	{
-		result = builtin(args + 1, front);
-		if (result != EXIT)
-			*exit_status = result;
+		ret = builtin(args + 1, front);
+		if (ret != EXIT)
+			*exe_ret = ret;
 	}
 	else
 	{
-		*exit_status = execute(args, front);
-		result = *exit_status;
+		*exe_ret = execute(args, front);
+		ret = *exe_ret;
 	}
 
 	hist++;
 
-	while (args[i])
-	{
+	for (i = 0; args[i]; i++)
 		free(args[i]);
-		i++;
-	}
 
-	return (result);
+	return (ret);
 }
 
 /**
  * handle_args - Gets, calls, and runs the execution of a command.
- * @exit_status: The return value of the parent process' last executed command.
+ * @exe_ret: The return value of the parent process' last executed command.
  *
  * Return: If an end-of-file is read - END_OF_FILE (-2).
  *         If the input cannot be tokenized - -1.
  *         O/w - The exit value of the last executed command.
  */
-int process_args(int *exit_status)
+int handle_args(int *exe_ret)
 {
-	int result = 0, idx = 0;
-	char **arguments, *line = NULL, **cmd_front;
+	int ret = 0, index;
+	char **args, *line = NULL, **front;
 
-	line = find_args(line, exit_status);
+	line = get_args(line, exe_ret);
 	if (!line)
-		return END_OF_FILE;
+		return (END_OF_FILE);
 
-	arguments = _strtok(line, " ");
+	args = _strtok(line, " ");
 	free(line);
-	if (!arguments)
-		return result;
-
-	if (check_args(arguments) != 0)
+	if (!args)
+		return (ret);
+	if (check_args(args) != 0)
 	{
-		*exit_status = 2;
-		free_args(arguments, arguments);
-		return *exit_status;
+		*exe_ret = 2;
+		free_args(args, args);
+		return (*exe_ret);
 	}
-	cmd_front = arguments;
+	front = args;
 
-	while (arguments[idx])
+	for (index = 0; args[index]; index++)
 	{
-		if (_strncmp(arguments[idx], ";", 1) == 0)
+		if (_strncmp(args[index], ";", 1) == 0)
 		{
-			free(arguments[idx]);
-			arguments[idx] = NULL;
-			result = prepare_args(arguments, cmd_front, exit_status);
-			arguments = &arguments[++idx];
-			idx = 0;
-		}
-		else
-		{
-			idx++;
+			free(args[index]);
+			args[index] = NULL;
+			ret = call_args(args, front, exe_ret);
+			args = &args[++index];
+			index = 0;
 		}
 	}
+	if (args)
+		ret = call_args(args, front, exe_ret);
 
-	if (arguments)
-		result = prepare_args(arguments, cmd_front, exit_status);
-
-	free(cmd_front);
-	return (result);
+	free(front);
+	return (ret);
 }
-
-
 
 /**
  * check_args - Checks if there are any leading ';', ';;', '&&', or '||'.
- * @arguments: 2D pointer to tokenized commands and arguments.
+ * @args: 2D pointer to tokenized commands and arguments.
+ *
  * Return: If a ';', '&&', or '||' is placed at an invalid position - 2.
  *	   Otherwise - 0.
  */
-int check_args(char **arguments)
+int check_args(char **args)
 {
-	size_t idx = 0;
-	char *current, *next;
+	size_t i;
+	char *cur, *nex;
 
-	while (arguments[idx])
+	for (i = 0; args[i]; i++)
 	{
-		current = arguments[idx];
-		if (current[0] == ';' || current[0] == '&' || current[0] == '|')
+		cur = args[i];
+		if (cur[0] == ';' || cur[0] == '&' || cur[0] == '|')
 		{
-			if (idx == 0 || current[1] == ';')
-				return (create_error(&arguments[idx], 2));
-			next = arguments[idx + 1];
-			if (next && (next[0] == ';' || next[0] == '&' || next[0] == '|'))
-				return (create_error(&arguments[idx + 1], 2));
+			if (i == 0 || cur[1] == ';')
+				return (create_error(&args[i], 2));
+			nex = args[i + 1];
+			if (nex && (nex[0] == ';' || nex[0] == '&' || nex[0] == '|'))
+				return (create_error(&args[i + 1], 2));
 		}
-		idx++;
 	}
-
 	return (0);
 }
-

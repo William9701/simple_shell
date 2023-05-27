@@ -1,4 +1,11 @@
+/*
+ * File: builtin.c
+ * Auth: John Mwadime
+ *       Lilian Imasua
+ */
+
 #include "shell.h"
+
 
 /**
  * get_builtin - Matches a command with a corresponding
@@ -10,13 +17,13 @@
 int (*get_builtin(char *command))(char **args, char **front)
 {
 	builtin_t funcs[] = {
-		{ "exit", shell_exit },
-		{ "env", shell_env },
-		{ "setenv", shell_setenv },
-		{ "unsetenv", shell_unsetenv },
-		{ "cd", shell_cd },
+		{ "exit", shellby_exit },
+		{ "env", shellby_env },
+		{ "setenv", shellby_setenv },
+		{ "unsetenv", shellby_unsetenv },
+		{ "cd", shellby_cd },
 		{ "alias", shell_alias },
-		{ "help", shell_help },
+		{ "help", shellby_help },
 		{ NULL, NULL }
 	};
 	int i;
@@ -30,7 +37,7 @@ int (*get_builtin(char *command))(char **args, char **front)
 }
 
 /**
- * shellby_exit - Causes normal process termination
+ * shell_exit - Causes normal process termination
  *                for the shellby shell.
  * @args: An array of arguments containing the exit value.
  * @front: A double pointer to the beginning of args.
@@ -41,7 +48,7 @@ int (*get_builtin(char *command))(char **args, char **front)
  *
  * Description: Upon returning -3, the program exits back in the main function.
  */
-int shell_exit(char **args, char **front)
+int shellby_exit(char **args, char **front)
 {
 	int i, len_of_int = 10;
 	unsigned int num = 0, max = 1 << (sizeof(int) * 8 - 1);
@@ -75,7 +82,7 @@ int shell_exit(char **args, char **front)
 }
 
 /**
- * shellby_cd - Changes the current directory of the shellby process.
+ * shell_cd - Changes the current directory of the shellby process.
  * @args: An array of arguments.
  * @front: A double pointer to the beginning of args.
  *
@@ -83,7 +90,7 @@ int shell_exit(char **args, char **front)
  *         If an error occurs - -1.
  *         Otherwise - 0.
  */
-int shell_cd(char **args, char __attribute__((__unused__)) **front)
+int shellby_cd(char **args, char __attribute__((__unused__)) **front)
 {
 	char **dir_info, *new_line = "\n";
 	char *oldpwd = NULL, *pwd = NULL;
@@ -137,12 +144,12 @@ int shell_cd(char **args, char __attribute__((__unused__)) **front)
 
 	dir_info[0] = "OLDPWD";
 	dir_info[1] = oldpwd;
-	if (shell_setenv(dir_info, dir_info) == -1)
+	if (shellby_setenv(dir_info, dir_info) == -1)
 		return (-1);
 
 	dir_info[0] = "PWD";
 	dir_info[1] = pwd;
-	if (shell_setenv(dir_info, dir_info) == -1)
+	if (shellby_setenv(dir_info, dir_info) == -1)
 		return (-1);
 	if (args[0] && args[0][0] == '-' && args[0][1] != '-')
 	{
@@ -156,14 +163,14 @@ int shell_cd(char **args, char __attribute__((__unused__)) **front)
 }
 
 /**
- * shellby_help - Displays information about shellby builtin commands.
+ * shell_help - Displays information about shellby builtin commands.
  * @args: An array of arguments.
  * @front: A pointer to the beginning of args.
  *
  * Return: If an error occurs - -1.
  *         Otherwise - 0.
  */
-int shell_help(char **args, char __attribute__((__unused__)) **front)
+int shellby_help(char **args, char __attribute__((__unused__)) **front)
 {
 	if (!args[0])
 		help_all();

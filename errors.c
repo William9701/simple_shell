@@ -1,5 +1,8 @@
 #include "shell.h"
 
+int num_len(int num);
+char *_itoa(int num);
+int create_error(char **args, int err);
 
 /**
  * num_len - Counts the digit length of a number.
@@ -83,18 +86,18 @@ int create_error(char **args, int err)
 	switch (err)
 	{
 	case -1:
-		error = env_error(args);
+		error = error_env(args);
 		break;
 	case 1:
 		error = error_1(args);
 		break;
 	case 2:
 		if (*(args[0]) == 'e')
-			error = exit_error(++args);
+			error = error_2_exit(++args);
 		else if (args[0][0] == ';' || args[0][0] == '&' || args[0][0] == '|')
-			error = syntax_error(args);
+			error = error_2_syntax(args);
 		else
-			error = cd_error(args);
+			error = error_2_cd(args);
 		break;
 	case 126:
 		error = error_126(args);

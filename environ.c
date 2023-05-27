@@ -1,5 +1,9 @@
 #include "shell.h"
 
+char **_copyenv(void);
+void free_env(void);
+char **_getenv(const char *var);
+
 /**
  * _copyenv - Creates a copy of the environment.
  *
@@ -8,36 +12,34 @@
  */
 char **_copyenv(void)
 {
-	char **new_env;
-	size_t env_size = 0;
-	int env_index = 0;
+	char **new_environ;
+	size_t size;
+	int index;
 
-	while (environ[env_size])
-		env_size++;
+	for (size = 0; environ[size]; size++)
+		;
 
-	new_env = malloc(sizeof(char *) * (env_size + 1));
-	if (!new_env)
+	new_environ = malloc(sizeof(char *) * (size + 1));
+	if (!new_environ)
 		return (NULL);
 
-	while (environ[env_index])
+	for (index = 0; environ[index]; index++)
 	{
-		new_env[env_index] = malloc(_strlen(environ[env_index]) + 1);
+		new_environ[index] = malloc(_strlen(environ[index]) + 1);
 
-		if (!new_env[env_index])
+		if (!new_environ[index])
 		{
-			while (env_index-- >= 0)
-				free(new_env[env_index]);
-			free(new_env);
+			for (index--; index >= 0; index--)
+				free(new_environ[index]);
+			free(new_environ);
 			return (NULL);
 		}
-		_strcpy(new_env[env_index], environ[env_index]);
-		env_index++;
+		_strcpy(new_environ[index], environ[index]);
 	}
-	new_env[env_index] = NULL;
+	new_environ[index] = NULL;
 
-	return (new_env);
+	return (new_environ);
 }
-
 
 /**
  * free_env - Frees the the environment copy.
