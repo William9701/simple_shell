@@ -1,15 +1,5 @@
-/*
- * File: helper.c
- * Auth: John Mwadime
- *       Lilian Imasua
- */
-
 #include "shell.h"
 
-void free_args(char **args, char **front);
-char *get_pid(void);
-char *get_env_value(char *beginning, int len);
-void variable_replacement(char **args, int *exe_ret);
 
 /**
  * free_args - Frees up memory taken by args.
@@ -18,13 +8,17 @@ void variable_replacement(char **args, int *exe_ret);
  */
 void free_args(char **args, char **front)
 {
-	size_t i;
+	size_t i = 0;
 
-	for (i = 0; args[i] || args[i + 1]; i++)
+	while (args[i] || args[i + 1])
+	{
 		free(args[i]);
+		i++;
+	}
 
 	free(front);
 }
+
 
 /**
  * get_pid - Gets the current process ID.
@@ -72,90 +66,93 @@ char *get_pid(void)
  *
  * Description: Variables are stored in the format VARIABLE=VALUE.
  */
-char *get_env_value(char *beginning, int len)
+char *get_env_value(char *name_begin, int name_len)
 {
-	char **var_addr;
-	char *replacement = NULL, *temp, *var;
+    char **env_address;
+    char *value = NULL;
+    char *temp;
+    char *name_copy;
 
-	var = malloc(len + 1);
-	if (!var)
-		return (NULL);
-	var[0] = '\0';
-	_strncat(var, beginning, len);
+    name_copy = malloc(name_len + 1);
+    if (!name_copy)
+        return NULL;
+    name_copy[0] = '\0';
+    _strncat(name_copy, name_begin, name_len);
 
-	var_addr = _getenv(var);
-	free(var);
-	if (var_addr)
-	{
-		temp = *var_addr;
-		while (*temp != '=')
-			temp++;
-		temp++;
-		replacement = malloc(_strlen(temp) + 1);
-		if (replacement)
-			_strcpy(replacement, temp);
-	}
+    env_address = _getenv(name_copy);
+    free(name_copy);
+    if (env_address)
+    {
+        temp = *env_address;
+        while (*temp != '=')
+            temp++;
+        temp++;
+        value = malloc(_strlen(temp) + 1);
+        if (value)
+            _strcpy(value, temp);
+    }
 
-	return (replacement);
+    return value;
 }
+
+
 
 /**
  * variable_replacement - Handles variable replacement.
  * @line: A double pointer containing the command and arguments.
  * @exe_ret: A pointer to the return value of the last executed command.
- *
  * Description: Replaces $$ with the current PID, $? with the return value
  *              of the last executed program, and envrionmental variables
  *              preceded by $ with their corresponding value.
  */
-void variable_replacement(char **line, int *exe_ret)
+void replace_variable(char **line, int *exe_ret)
 {
-	int j, k = 0, len;
-	char *replacement = NULL, *old_line = NULL, *new_line;
+    int i = 0, variable_len;
+    char *replacement = NULL, *old_str = NULL, *new_str;
 
-	old_line = *line;
-	for (j = 0; old_line[j]; j++)
-	{
-		if (old_line[j] == '$' && old_line[j + 1] &&
-				old_line[j + 1] != ' ')
-		{
-			if (old_line[j + 1] == '$')
-			{
-				replacement = get_pid();
-				k = j + 2;
-			}
-			else if (old_line[j + 1] == '?')
-			{
-				replacement = _itoa(*exe_ret);
-				k = j + 2;
-			}
-			else if (old_line[j + 1])
-			{
-				/* extract the variable name to search for */
-				for (k = j + 1; old_line[k] &&
-						old_line[k] != '$' &&
-						old_line[k] != ' '; k++)
-					;
-				len = k - (j + 1);
-				replacement = get_env_value(&old_line[j + 1], len);
-			}
-			new_line = malloc(j + _strlen(replacement)
-					  + _strlen(&old_line[k]) + 1);
-			if (!line)
-				return;
-			new_line[0] = '\0';
-			_strncat(new_line, old_line, j);
-			if (replacement)
-			{
-				_strcat(new_line, replacement);
-				free(replacement);
-				replacement = NULL;
-			}
-			_strcat(new_line, &old_line[k]);
-			free(old_line);
-			*line = new_line;
-			old_line = new_line;
-			j = -1;
-		}
-	}
+    old_str = *line;
+    while (old_str[i])
+    {
+        if (old_str[i] == '$' && old_str[i + 1] && old_str[i + 1] != ' ')
+        {
+            if (old_str[i + 1] == '$')
+            {
+                replacement = get_pid();
+                i += 2;
+            }
+            else if (old_str[i + 1] == '?')
+            {
+                replacement = _itoa(*exe_ret);
+                i += 2;
+            }
+            else if (old_str[i + 1])
+            {
+                /* extract the variable name to search for */
+                int j = i + 1;
+                while (old_str[j] && old_str[j] != '$' && old_str[j] != ' ')
+                    j++;
+                variable_len = j - (i + 1);
+                replacement = get_env_value(&old_str[i + 1], variable_len);
+                i = j;
+            }
+            new_str = malloc(i + _strlen(replacement) + _strlen(&old_str[i]) + 1);
+            if (!new_str)
+                return;
+            new_str[0] = '\0';
+            _strncat(new_str, old_str, i);
+            if (replacement)
+            {
+                _strcat(new_str, replacement);
+                free(replacement);
+                replacement = NULL;
+            }
+            _strcat(new_str, &old_str[i]);
+            free(old_str);
+            *line = new_str;
+            old_str = new_str;
+            i = -1;
+        }
+        i++;
+    }
 }
+

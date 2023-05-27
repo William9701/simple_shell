@@ -1,14 +1,4 @@
-/*
- * File: environ.c
- * Auth: John Mwadime
- *       Lilian Imasua
- */
-
 #include "shell.h"
-
-char **_copyenv(void);
-void free_env(void);
-char **_getenv(const char *var);
 
 /**
  * _copyenv - Creates a copy of the environment.
@@ -18,34 +8,36 @@ char **_getenv(const char *var);
  */
 char **_copyenv(void)
 {
-	char **new_environ;
-	size_t size;
-	int index;
+	char **new_env;
+	size_t env_size = 0;
+	int env_index = 0;
 
-	for (size = 0; environ[size]; size++)
-		;
+	while (environ[env_size])
+		env_size++;
 
-	new_environ = malloc(sizeof(char *) * (size + 1));
-	if (!new_environ)
+	new_env = malloc(sizeof(char *) * (env_size + 1));
+	if (!new_env)
 		return (NULL);
 
-	for (index = 0; environ[index]; index++)
+	while (environ[env_index])
 	{
-		new_environ[index] = malloc(_strlen(environ[index]) + 1);
+		new_env[env_index] = malloc(_strlen(environ[env_index]) + 1);
 
-		if (!new_environ[index])
+		if (!new_env[env_index])
 		{
-			for (index--; index >= 0; index--)
-				free(new_environ[index]);
-			free(new_environ);
+			while (env_index-- >= 0)
+				free(new_env[env_index]);
+			free(new_env);
 			return (NULL);
 		}
-		_strcpy(new_environ[index], environ[index]);
+		_strcpy(new_env[env_index], environ[env_index]);
+		env_index++;
 	}
-	new_environ[index] = NULL;
+	new_env[env_index] = NULL;
 
-	return (new_environ);
+	return (new_env);
 }
+
 
 /**
  * free_env - Frees the the environment copy.

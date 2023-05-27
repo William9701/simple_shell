@@ -1,15 +1,5 @@
-/*
- * File: linkedlist.c
- * Auth: John Mwadime
- *       Lilian Imasua
- */
-
 #include "shell.h"
 
-alias_t *add_alias_end(alias_t **head, char *name, char *value);
-void free_alias_list(alias_t *head);
-list_t *add_node_end(list_t **head, char *dir);
-void free_list(list_t *head);
 
 /**
  * add_alias_end - Adds a node to the end of a alias_t linked list.
@@ -22,47 +12,46 @@ void free_list(list_t *head);
  */
 alias_t *add_alias_end(alias_t **head, char *name, char *value)
 {
-	alias_t *new_node = malloc(sizeof(alias_t));
-	alias_t *last;
+	alias_t *new_alias = malloc(sizeof(alias_t));
+	alias_t *last_alias;
 
-	if (!new_node)
+	if (!new_alias)
 		return (NULL);
 
-	new_node->next = NULL;
-	new_node->name = malloc(sizeof(char) * (_strlen(name) + 1));
-	if (!new_node->name)
+	new_alias->next = NULL;
+	new_alias->name = malloc(sizeof(char) * (_strlen(name) + 1));
+	if (!new_alias->name)
 	{
-		free(new_node);
+		free(new_alias);
 		return (NULL);
 	}
-	new_node->value = value;
-	_strcpy(new_node->name, name);
+	new_alias->value = value;
+	_strcpy(new_alias->name, name);
 
 	if (*head)
 	{
-		last = *head;
-		while (last->next != NULL)
-			last = last->next;
-		last->next = new_node;
+		last_alias = *head;
+		while (last_alias->next != NULL)
+			last_alias = last_alias->next;
+		last_alias->next = new_alias;
 	}
 	else
-		*head = new_node;
+		*head = new_alias;
 
-	return (new_node);
+	return (new_alias);
 }
 
 /**
  * add_node_end - Adds a node to the end of a list_t linked list.
  * @head: A pointer to the head of the list_t list.
  * @dir: The directory path for the new node to contain.
- *
  * Return: If an error occurs - NULL.
  *         Otherwise - a pointer to the new node.
  */
 list_t *add_node_end(list_t **head, char *dir)
 {
 	list_t *new_node = malloc(sizeof(list_t));
-	list_t *last;
+	list_t *last_node;
 
 	if (!new_node)
 		return (NULL);
@@ -72,10 +61,10 @@ list_t *add_node_end(list_t **head, char *dir)
 
 	if (*head)
 	{
-		last = *head;
-		while (last->next != NULL)
-			last = last->next;
-		last->next = new_node;
+		last_node = *head;
+		while (last_node->next != NULL)
+			last_node = last_node->next;
+		last_node->next = new_node;
 	}
 	else
 		*head = new_node;
