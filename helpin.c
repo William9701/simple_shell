@@ -1,20 +1,20 @@
 #include "shell.h"
 
-char *get_args(char *line, int *exe_ret);
+char *fetch_args(char *line, int *exe_ret);
 int call_args(char **args, char **front, int *exe_ret);
-int run_args(char **args, char **front, int *exe_ret);
-int handle_args(int *exe_ret);
+int execute_args(char **args, char **front, int *exe_ret);
+int process_args(int *exe_ret);
 int check_args(char **args);
 
 /**
- * get_args - Gets a command from standard input.
+ * fetch_args - Gets a command from standard input.
  * @line: A buffer to store the command.
  * @exe_ret: The return value of the last executed command.
  *
  * Return: If an error occurs - NULL.
  *         Otherwise - a pointer to the stored command.
  */
-char *get_args(char *line, int *exe_ret)
+char *fetch_args(char *line, int *exe_ret)
 {
 	size_t n = 0;
 	ssize_t read;
@@ -31,12 +31,12 @@ char *get_args(char *line, int *exe_ret)
 		hist++;
 		if (isatty(STDIN_FILENO))
 			write(STDOUT_FILENO, prompt, 2);
-		return (get_args(line, exe_ret));
+		return (fetch_args(line, exe_ret));
 	}
 
 	line[read - 1] = '\0';
-	variable_replacement(&line, exe_ret);
-	handle_line(&line, read);
+	replace_variable(&line, exe_ret);
+	process_line(&line, read);
 
 	return (line);
 }
@@ -62,7 +62,7 @@ int call_args(char **args, char **front, int *exe_ret)
 			free(args[index]);
 			args[index] = NULL;
 			args = replace_aliases(args);
-			ret = run_args(args, front, exe_ret);
+			ret = execute_args(args, front, exe_ret);
 			if (*exe_ret != 0)
 			{
 				args = &args[++index];
@@ -80,7 +80,7 @@ int call_args(char **args, char **front, int *exe_ret)
 			free(args[index]);
 			args[index] = NULL;
 			args = replace_aliases(args);
-			ret = run_args(args, front, exe_ret);
+			ret = execute_args(args, front, exe_ret);
 			if (*exe_ret == 0)
 			{
 				args = &args[++index];
@@ -95,19 +95,19 @@ int call_args(char **args, char **front, int *exe_ret)
 		}
 	}
 	args = replace_aliases(args);
-	ret = run_args(args, front, exe_ret);
+	ret = execute_args(args, front, exe_ret);
 	return (ret);
 }
 
 /**
- * run_args - Calls the execution of a command.
+ * execute_args - Calls the execution of a command.
  * @args: An array of arguments.
  * @front: A double pointer to the beginning of args.
  * @exe_ret: The return value of the parent process' last executed command.
  *
  * Return: The return value of the last executed command.
  */
-int run_args(char **args, char **front, int *exe_ret)
+int execute_args(char **args, char **front, int *exe_ret)
 {
 	int ret, i;
 	int (*builtin)(char **args, char **front);
@@ -135,19 +135,19 @@ int run_args(char **args, char **front, int *exe_ret)
 }
 
 /**
- * handle_args - Gets, calls, and runs the execution of a command.
+ * process_args - Gets, calls, and runs the execution of a command.
  * @exe_ret: The return value of the parent process' last executed command.
  *
  * Return: If an end-of-file is read - END_OF_FILE (-2).
  *         If the input cannot be tokenized - -1.
  *         O/w - The exit value of the last executed command.
  */
-int handle_args(int *exe_ret)
+int process_args(int *exe_ret)
 {
 	int ret = 0, index;
 	char **args, *line = NULL, **front;
 
-	line = get_args(line, exe_ret);
+	line = fetch_args(line, exe_ret);
 	if (!line)
 		return (END_OF_FILE);
 

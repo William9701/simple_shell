@@ -1,7 +1,7 @@
 #include "shell.h"
 
 int cant_open(char *file_path);
-int proc_file_commands(char *file_path, int *exe_ret);
+int process_commands(char *file_path, int *exe_ret);
 
 /**
  * cant_open - If the file doesn't exist or lacks proper permissions, print
@@ -51,7 +51,7 @@ int cant_open(char *file_path)
  *	   If malloc fails - -1.
  *	   Otherwise the return value of the last command ran.
  */
-int proc_file_commands(char *file_path, int *exe_ret)
+int process_commands(char *file_path, int *exe_ret)
 {
 	ssize_t file, b_read, i;
 	unsigned int line_size = 0;
@@ -91,8 +91,8 @@ int proc_file_commands(char *file_path, int *exe_ret)
 				line[i] = ' ';
 		}
 	}
-	variable_replacement(&line, exe_ret);
-	handle_line(&line, line_size);
+	replace_variable(&line, exe_ret);
+	process_line(&line, line_size);
 	args = _strtok(line, " ");
 	free(line);
 	if (!args)

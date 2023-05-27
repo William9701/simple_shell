@@ -18,24 +18,24 @@ void *_realloc(void *ptr, unsigned int old_size, unsigned int new_size)
 {
 	void *mem;
 	char *ptr_copy, *filler;
-	unsigned int index;
+	unsigned int i = 0;
 
 	if (new_size == old_size)
-		return (ptr);
+		return ptr;
 
 	if (ptr == NULL)
 	{
 		mem = malloc(new_size);
 		if (mem == NULL)
-			return (NULL);
+			return NULL;
 
-		return (mem);
+		return mem;
 	}
 
 	if (new_size == 0 && ptr != NULL)
 	{
 		free(ptr);
-		return (NULL);
+		return NULL;
 	}
 
 	ptr_copy = ptr;
@@ -43,17 +43,21 @@ void *_realloc(void *ptr, unsigned int old_size, unsigned int new_size)
 	if (mem == NULL)
 	{
 		free(ptr);
-		return (NULL);
+		return NULL;
 	}
 
 	filler = mem;
 
-	for (index = 0; index < old_size && index < new_size; index++)
-		filler[index] = *ptr_copy++;
+	while (i < old_size && i < new_size)
+	{
+		filler[i] = *ptr_copy++;
+		i++;
+	}
 
 	free(ptr);
-	return (mem);
+	return mem;
 }
+
 
 /**
  * assign_lineptr - Reassigns the lineptr variable for _getline.

@@ -3,7 +3,7 @@
 void free_args(char **args, char **front);
 char *get_pid(void);
 char *get_env_value(char *beginning, int len);
-void variable_replacement(char **args, int *exe_ret);
+void replace_variable(char **args, int *exe_ret);
 
 /**
  * free_args - Frees up memory taken by args.
@@ -102,7 +102,7 @@ char *get_env_value(char *beginning, int len)
  *              of the last executed program, and envrionmental variables
  *              preceded by $ with their corresponding value.
  */
-void variable_replacement(char **line, int *exe_ret)
+void replace_variable(char **line, int *exe_ret)
 {
 	int j, k = 0, len;
 	char *replacement = NULL, *old_line = NULL, *new_line;

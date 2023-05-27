@@ -33,7 +33,7 @@ int execute(char **args, char **front)
 	if (command[0] != '/' && command[0] != '.')
 	{
 		flag = 1;
-		command = get_location(command);
+		command = get_path(command);
 	}
 
 	if (!command || (access(command, F_OK) == -1))
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
 	if (argc != 1)
 	{
-		ret = proc_file_commands(argv[1], exe_ret);
+		ret = process_commands(argv[1], exe_ret);
 		free_env();
 		free_alias_list(aliases);
 		return (*exe_ret);
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 	if (!isatty(STDIN_FILENO))
 	{
 		while (ret != END_OF_FILE && ret != EXIT)
-			ret = handle_args(exe_ret);
+			ret = process_args(exe_ret);
 		free_env();
 		free_alias_list(aliases);
 		return (*exe_ret);
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		write(STDOUT_FILENO, prompt, 2);
-		ret = handle_args(exe_ret);
+		ret = process_args(exe_ret);
 		if (ret == END_OF_FILE || ret == EXIT)
 		{
 			if (ret == END_OF_FILE)
