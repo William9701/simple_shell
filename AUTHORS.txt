@@ -1,0 +1,4 @@
+# This file lists all contributors to this repository
+
+John Mwadime  <johnniekips@gmail.com>
+Lilian Imasua <lilianimasua@gmail.com>
