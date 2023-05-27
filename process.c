@@ -48,8 +48,8 @@ int cant_open(char *file_path)
  * @exe_ret: Return value of the last executed command.
  *
  * Return: If file couldn't be opened - 127.
- *	   If malloc fails - -1.
- *	   Otherwise the return value of the last command ran.
+ *If malloc fails - -1.
+ *Otherwise the return value of the last command ran.
  */
 int process_commands(char *file_path, int *exe_ret)
 {
